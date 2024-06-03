@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.9.34728.123
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mcscript", "mcscript\mcscript.vcxproj", "{9DCEB1B4-E2C8-4775-8A7D-1B2AFDE97FAB}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9DCEB1B4-E2C8-4775-8A7D-1B2AFDE97FAB}.Debug|x64.ActiveCfg = Debug|x64
+		{9DCEB1B4-E2C8-4775-8A7D-1B2AFDE97FAB}.Debug|x64.Build.0 = Debug|x64
+		{9DCEB1B4-E2C8-4775-8A7D-1B2AFDE97FAB}.Debug|x86.ActiveCfg = Debug|Win32
+		{9DCEB1B4-E2C8-4775-8A7D-1B2AFDE97FAB}.Debug|x86.Build.0 = Debug|Win32
+		{9DCEB1B4-E2C8-4775-8A7D-1B2AFDE97FAB}.Release|x64.ActiveCfg = Release|x64
+		{9DCEB1B4-E2C8-4775-8A7D-1B2AFDE97FAB}.Release|x64.Build.0 = Release|x64
+		{9DCEB1B4-E2C8-4775-8A7D-1B2AFDE97FAB}.Release|x86.ActiveCfg = Release|Win32
+		{9DCEB1B4-E2C8-4775-8A7D-1B2AFDE97FAB}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {B85C6F68-5613-4CFA-BEE6-11A4EB7D32AA}
+	EndGlobalSection
+EndGlobal
