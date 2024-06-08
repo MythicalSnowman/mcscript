@@ -1,16 +1,1 @@
-Running Simulation: 0	Doing: <0, 16, 32>
-Running Simulation: 1	Doing: <1, 17, 33>
-Running Simulation: 2	Doing: <2, 18, 34>
-Running Simulation: 3	Doing: <3, 19>
-Running Simulation: 4	Doing: <4, 20>
-Running Simulation: 5	Doing: <5, 21>
-Running Simulation: 6	Doing: <6, 22>
-Running Simulation: 7	Doing: <7, 23>
-Running Simulation: 8	Doing: <8, 24>
-Running Simulation: 9	Doing: <9, 25>
-Running Simulation: 10	Doing: <10, 26>
-Running Simulation: 11	Doing: <11, 27>
-Running Simulation: 12	Doing: <12, 28>
-Running Simulation: 13	Doing: <13, 29>
-Running Simulation: 14	Doing: <14, 30>
-Running Simulation: 15	Doing: <15, 31>
+All simulations completed.
