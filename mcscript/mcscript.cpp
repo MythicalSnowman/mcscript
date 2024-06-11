@@ -185,23 +185,30 @@ void runSimulaiton(int simulationId, std::vector<int> parameter, std::ofstream& 
 	World world;
 	// create the blocks in the world
 	Block yGuider(3359, -13, -16113);
+	Block xGuider(3368, -14, -16113);
 
 	// Initialize all Entities
-	Tnt power("3359.5 -18.0 -16113.5");
-	Tnt proj("3384.5 -15.0 -16123.5");
-
+	Tnt power("3357.5 -18.0 -16113.5");
+	power.setAmount(100);
+	Tnt proj("3359.5 -17.5 -16112.5");
 
 	// Set their delays
-	power.setAge(0);
+	power.setFuse(0);
+	proj.setFuse(80);	// this is set to 80 by default
+
+	// set their orders
+	power.setOrder(0);
+	proj.setOrder(1);
 
 	// Populate the world with blocks and Entities
 	world.addBlocks(yGuider);
-	world.addEntities({ &power, &proj }); // order is important
-
+	world.addBlocks(xGuider);
+	world.addEntities({ &power, &proj}); 
+	
 	// creates a backup of the world (for initial conditions)
 	world.backup();
 
-	//world.update();
+	world.run(1); // run the world for 20 ticks
 	{
 		std::lock_guard<std::mutex> lock(printMutex);
 		std::cout << "World Blocks of " << simulationId << std::endl;

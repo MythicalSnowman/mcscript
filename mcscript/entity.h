@@ -38,9 +38,9 @@ protected:
 	unsigned int amount = 1;
 	unsigned int order = 0;
 	unsigned int age = 0;
+	bool aliveState = true;
 	std::string name = "";
 	std::vector<std::vector<double>> history;
-	std::vector<std::vector<int>> blocksInWorld;
 public:
 	double getX() const { return locX; }
 	double getY() const { return locY; }
@@ -51,6 +51,7 @@ public:
 	unsigned int getAmount() const { return amount; }
 	unsigned int getOrder() const { return order; }
 	unsigned int getAge() const { return age; }
+	bool isAlive() { return aliveState; }
 	std::string getName() const { return name; }
 
 	void setX(double x) { locX = x; }
@@ -69,6 +70,7 @@ public:
 	void setAmount(unsigned int n) { amount = n; }
 	void setOrder(unsigned int n) { order = n; }
 	void setAge(unsigned int num) { age = num; }
+	void kill() { aliveState = false; }
 	void setName(std::string myName) { name = myName; }
 private:
 	bool onGround = false;
@@ -96,7 +98,6 @@ public:
 	Entity(const Entity& other) : locX(other.locX), locY(other.locY), locZ(other.locZ), motX(other.motX), motY(other.motY), motZ(other.motZ),
 		amount(other.amount), age(other.age), name(other.name), history(other.history)
 	{
-		blocksInWorld = other.blocksInWorld; // Same as adding in the header
 	}
 
 	void printHistory()
@@ -127,7 +128,7 @@ public:
 	// virtual void getEyeHeight() = 0;
 	virtual void explosionFrom(const Entity& booster, double fraction) = 0;
 	virtual void swingFrom(const Entity& booster) = 0;
-	virtual void freefall(unsigned int ticks) = 0;
+	virtual void freefall(unsigned int ticks, const std::vector<Block>& blocksInWorld) = 0;
 	virtual void print() = 0;
 };
 
@@ -135,10 +136,13 @@ class Tnt : public Entity
 {
 public:
 	static const double explosion_height;
+	const double halfWidth = 0.49;
+	const double height = 0.98;
 private:
 	const double drag = 0.98, gravity = -0.04; // eye height
-	unsigned int fuse = 0;
+	unsigned int fuse = 80;
 public:
+	// Constructors and setters/getters
 	Tnt() : Entity() {}
 	Tnt(double x, double y, double z) : Entity(x, y, z) {}
 	Tnt(double x, double y, double z, double vx, double vy, double vz) : Entity(x, y, z, vx, vy, vz) {}
@@ -152,7 +156,106 @@ public:
 		}
 		return *this;
 	}
-	
+
+	unsigned int getFuse() const { return fuse; };
+	void setFuse(unsigned int n) { fuse = n; }
+
+public:
+	void checkCollision(const std::vector<Block>& blocksInWorld) {
+
+		double newX = locX + motX;
+		double newY = locY + motY;
+		double newZ = locZ + motZ;
+
+		// Calculate the boundaries of the TNT block's new position
+		double newTntMinX = locX - halfWidth;
+		double newTntMaxX = locX + halfWidth;
+		double newTntMinY = locY;
+		double newTntMaxY = locY + height;
+		double newTntMinZ = locZ - halfWidth;
+		double newTntMaxZ = locZ + halfWidth;
+
+		// Checks along the Y direciton
+		for (const Block& block : blocksInWorld) {
+			// Calculate the boundaries of the block
+			double blockMinX = block.x;
+			double blockMaxX = block.x + 1.0;
+			double blockMinY = block.y;
+			double blockMaxY = block.y + 1.0;
+			double blockMinZ = block.z;
+			double blockMaxZ = block.z + 1.0;
+
+			// Check along the Y direction
+			if (newTntMaxX > blockMinX && newTntMinX < blockMaxX &&
+				newTntMaxZ > blockMinZ && newTntMinZ < blockMaxZ) {
+
+				if (motY > 0 && newY + height > blockMinY) {
+					newY = blockMinY - height;
+				}
+				else if (motY < 0 && newY < blockMaxY) {
+					newY = blockMaxY; // not tested
+				}
+			}
+		} // update Y location/velocity
+		if (locY + motY != newY) {
+			locY = newY;
+			motY = 0;
+		}
+		else locY = newY;
+
+		
+		// check the dirction of the triangle
+		if (motX > motZ)
+		{
+			// Calculate the boundaries of the TNT block's new position
+			double newTntMinX = locX - halfWidth;
+			double newTntMaxX = locX + halfWidth;
+			double newTntMinY = locY;
+			double newTntMaxY = locY + height;
+			double newTntMinZ = locZ - halfWidth;
+			double newTntMaxZ = locZ + halfWidth;
+			for (const Block& block : blocksInWorld) {
+				// Calculate the boundaries of the block
+				double blockMinX = block.x;
+				double blockMaxX = block.x + 1.0;
+				double blockMinY = block.y;
+				double blockMaxY = block.y + 1.0;
+				double blockMinZ = block.z;
+				double blockMaxZ = block.z + 1.0;
+
+				// Check along the Y direction
+				if (newTntMaxZ > blockMinZ && newTntMinZ < blockMaxZ &&
+					newTntMaxY > blockMinY && newTntMinY < blockMaxY) {
+
+					if (motX > 0 && newX + halfWidth > blockMinX) {
+						newX = blockMinX - halfWidth;
+
+					}
+					else if (motX < 0 && newX - halfWidth < blockMaxX) {
+						newX = blockMaxX + halfWidth;
+
+					}
+				}
+			}
+		} else {
+
+		}
+		
+		if (locX + motX != newX) {
+			locX = newX;
+			motX = 0;
+		} else locX = newX;
+		
+		
+
+		if (locZ + motZ != newZ) {
+			locZ = newZ;
+			motX = 0;
+		} else locZ = newZ;
+		
+	}
+
+
 	void explosionFrom(const Entity& booster, double fraction) override
 	{
 		double dx = locX - booster.getX(), dy = locY - (booster.getY() + Tnt::explosion_height), dz = locZ - booster.getZ();
@@ -224,22 +327,19 @@ public:
 			motZ += dz / directionMagnitude * f;
 		}
 	}
-	void freefall(unsigned int ticks) override
+	void freefall(unsigned int ticks, const std::vector<Block>& blocksInWorld) override
 	{
-		for (int i = 1; i <= ticks; i++)
-		{
+		for (unsigned int i = 1; i <= ticks; i++) {
 			motY += gravity;
 
-			// TODO: Freefall Block interaction Code
-
-			locY += motY;
-			locX += motX;
-			locZ += motZ;
+			// Position update with obstacle check
+			checkCollision(blocksInWorld);
 
 			motX *= drag;
 			motY *= drag;
 			motZ *= drag;
 			age++;
+			fuse--;
 			history.push_back(std::vector<double>{locX, locY, locZ, motX, motY, motZ, 0});
 		}
 	}
@@ -252,8 +352,8 @@ public:
 	}
 };
 
-const double Tnt::explosion_height = 0.061250001192092896;
-
+const double Tnt::explosion_height = 0.061250001192092896; // something is off
+/*
 class FallingEntity : public Entity
 {
 
@@ -344,17 +444,22 @@ public:
 			motZ += dz / directionMagnitude * f;
 		}
 	}
-	void freefall(unsigned int ticks) override
+	void freefall(unsigned int ticks, std::vector<Block>& blocksInWorld) override
 	{
 		for (int i = 1; i <= ticks; i++)
 		{
 			motY += gravity;
 
-			// TODO: Freefall Block interaction Code
-
-			locY += motY;
-			locX += motX;
-			locZ += motZ;
+			//	position update
+			locY += motY; // add a check before updating position to check if any obstacles exist along the Y direction
+			if (motX > motZ) {
+				locX += motX; // add a check before updating position to check if any obstacles exist along the X direction
+				locZ += motZ; // add a check before updating position to check if any obstacles exist along the Z direction
+			}
+			else {
+				locZ += motZ; // add a check before updating position to check if any obstacles exist along the Z direction
+				locX += motX; // add a check before updating position to check if any obstacles exist along the X direction
+			}
 
 			motX *= drag;
 			motY *= drag;
@@ -371,8 +476,25 @@ public:
 		std::cout << "\tMOT: " << motX << " " << motY << " " << motZ << std::endl;
 	}
 };
-
+*/
+// Comparator function for sorting entities by order
+bool compareEntities(Entity* a, Entity* b) {
+	return a->getOrder() < b->getOrder();
+}
 class World {
+public:
+	// Default constructor
+	World() = default;
+
+	// Copy constructor
+	World(const World& other) : blocksInWorld(other.blocksInWorld) {}
+
+	// Assignment operator
+	World& operator=(const World& other) {
+		if (this != &other)  // Self-assignment check
+			blocksInWorld = other.blocksInWorld;
+		return *this;
+	}
 private:
 	unsigned int worldTick = 0;
 	std::vector<Block> blocksInWorld;
@@ -388,25 +510,90 @@ public:
 		blocksInWorld.push_back(blockToAdd);
 	};
 	void addBlocks(std::vector<Block> blocksToAdd) {
-		for (Block block : blocksToAdd) 
+		for (Block block : blocksToAdd)
 			blocksInWorld.push_back(block);
 	};
 
 	// Entities
 	void addEntity(Entity* entity) {
 		entitiesInWorld.push_back(entity);
+		std::sort(entitiesInWorld.begin(), entitiesInWorld.end(), compareEntities);
 	}
+
 	void addEntities(std::vector<Entity*> entitiesToAdd) {
-		for (auto entity : entitiesToAdd) 
+		for (auto entity : entitiesToAdd)
 			entitiesInWorld.push_back(entity);
+		std::sort(entitiesInWorld.begin(), entitiesInWorld.end(), compareEntities);
 	}
-	
-	// Update
-	void update() {
+
+	void run(unsigned int ticks) {
+		if (ticks == 0)
+			return;
+		/*
+		* Minecraft normally computes in each gametick
+		*
+		* while(true) {
+		*    Freefall
+		*    Explosions
+		* }
+		*
+		* This code will perform:
+		*
+		* Explosions
+		* while(true) {
+		*    Freefall
+		*    Explosions
+		* }
+		*/
+
+		//	Explosions
 		for (Entity* entity : entitiesInWorld) {
-			if (entity->getAge() == worldTick) {
-				
+			// Use dynamic_cast to check if entity is a Tnt
+			Tnt* tntEntity = dynamic_cast<Tnt*>(entity);
+
+			// If the cast is successful, check the fuse value
+			if (tntEntity && tntEntity->isAlive() && tntEntity->getFuse() == 0) {
+				std::cout << "Tnt entity with fuse 0 found" << std::endl;
+
+				// Loop through all entities except the current one
+				for (Entity* otherEntity : entitiesInWorld) {
+					if (otherEntity != tntEntity) {
+						// Performs explosions functions on other entities
+						otherEntity->explosionFrom(*tntEntity, air);
+					}
+				}
+				tntEntity->kill();
 			}
+		}
+		for (int i = 0; i < ticks; i++) {
+			//	Freefall
+			for (Entity* entity : entitiesInWorld) {
+				if (entity->isAlive()) {
+					entity->freefall(1, blocksInWorld);
+				}
+			}
+
+
+			/*
+			//	Explosions
+			for (Entity* entity : entitiesInWorld) {
+				// Use dynamic_cast to check if entity is a Tnt
+				Tnt* tntEntity = dynamic_cast<Tnt*>(entity);
+				if (tntEntity) {
+					// If the cast is successful, check the fuse value
+					if (tntEntity->getFuse() == 0) {
+						std::cout << "Tnt entity with fuse 0 found" << std::endl;
+
+						// Loop through all entities except the current one
+						for (Entity* otherEntity : entitiesInWorld) {
+							if (otherEntity != tntEntity) {
+								// Performs explosions functions on other entities
+								otherEntity->explosionFrom(*tntEntity, air);
+							}
+						}
+					}
+				}
+			}*/
 		}
 	}
 
@@ -422,6 +609,7 @@ public:
 	}
 	void clear() {
 		blocksInWorld.clear();
+		entitiesInWorld.clear();
 	}
 	void reload() {
 		blocksInWorld = backupBlocksInWorld;
@@ -435,23 +623,11 @@ public:
 		for (Block block : blocksInWorld)
 			std::cout << "\t" << block.x << ", " << block.y << ", " << block.z << std::endl;
 		std::cout << "  Entity information: " << std::endl;
-		for (Entity* entity : entitiesInWorld)
-			std::cout << "\t" << entity->getX() << ", " << entity->getY() << ", " << entity->getZ() << std::endl;
-	}
-public:
-	// Default constructor
-	World() = default;
-
-	// Copy constructor
-	World(const World& other)
-		: blocksInWorld(other.blocksInWorld) {}
-
-	// Assignment operator
-	World& operator=(const World& other) {
-		if (this != &other) { // Self-assignment check
-			blocksInWorld = other.blocksInWorld;
+		for (Entity* entity : entitiesInWorld) {
+			std::cout << "\t" << entity->getX() << ", " << entity->getY() << ", " << entity->getZ() << "\t"
+				<< entity->getU() << ", " << entity->getV() << ", " << entity->getW() << std::endl;
 		}
-		return *this;
 	}
+
 };
 #endif // ENTITY_H
