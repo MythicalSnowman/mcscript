@@ -109,7 +109,7 @@ std::vector<double> generateZGains(std::vector<Tnt> pow, Tnt proj0) {
 	Tnt proj1;
 	for (int i = 0; i < pow.size(); i++) {
 		proj1 = proj0;
-		proj1.explosionFrom(pow[i], 0.9f);
+		proj1.explosionFrom(pow[i], 0.9f, {});
 		zGains[i] = proj1.getZ() - proj0.getZ();
 	}
 	return zGains;
@@ -184,35 +184,25 @@ void runSimulaiton(int simulationId, std::vector<int> parameter, std::ofstream& 
 	// setup of the test world
 	World world;
 	// create the blocks in the world
-	Block yGuider(3359, -13, -16113);
-	Block xGuider(3368, -14, -16113);
+	Block yBlock(3360, 2, -16086);
+	std::vector<Block> blocksInWorld = {yBlock};
 
 	// Initialize all Entities
-	Tnt power("3357.5 -18.0 -16113.5");
-	power.setAmount(100);
-	Tnt proj("3359.5 -17.5 -16112.5");
+	Tnt slabbust("3360.4900000095367 1.0199999809265137 -16085.490000009537");
+	slabbust.setAmount(500);
+	slabbust.freefall(3, { yBlock });
+	slabbust.explosionFrom(slabbust, air, { yBlock });// swing w 1 tnt
+	slabbust.freefall(1, { yBlock });
+	slabbust.printHistory();
 
-	// Set their delays
-	power.setFuse(0);
-	proj.setFuse(80);	// this is set to 80 by default
 
-	// set their orders
-	power.setOrder(0);
-	proj.setOrder(1);
 
-	// Populate the world with blocks and Entities
-	world.addBlocks(yGuider);
-	world.addBlocks(xGuider);
-	world.addEntities({ &power, &proj}); 
-	
-	// creates a backup of the world (for initial conditions)
-	world.backup();
-
-	world.run(1); // run the world for 20 ticks
+	/*
+	world.run(6); // run the world for 20 ticks
 	{
 		std::lock_guard<std::mutex> lock(printMutex);
 		std::cout << "World Blocks of " << simulationId << std::endl;
 		world.printInformation();
 	}
-
+	*/
 };
