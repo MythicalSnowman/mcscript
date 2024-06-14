@@ -26,9 +26,6 @@
     <ClInclude Include="reader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Header.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="entity.h">
       <Filter>Header Files</Filter>
     </ClInclude>

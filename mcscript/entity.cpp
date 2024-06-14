@@ -58,8 +58,11 @@ void Entity::printHistory() {
 	short int cellWidthMot = DISPLAY_MOT_DIGITS + 2;
 	for (long unsigned int i = 0; i < history.size(); i++)
 	{
+		if (!getName().empty()) {
+			std::cout << "\t" << getName();
+		}
 		// Age
-		std::cout << std::setw(10) << std::left << "Age " + std::to_string(i) + ":";
+		std::cout << std::setw(10) << std::left << "\tAge " + std::to_string(i) + ":";
 		// Position
 		std::cout << std::setprecision(DISPLAY_LOC_DIGITS);
 		std::cout << std::setw(cellWidthLoc) << std::left << history[i][0] << " " << std::setw(cellWidthLoc) << std::left << history[i][1] << " " << std::setw(cellWidthLoc) << std::left << history[i][2];
@@ -383,6 +386,55 @@ void Tnt::print() {
 }
 
 
+
+FallingBlock::FallingBlock()
+{
+}
+
+FallingBlock::FallingBlock(double x, double y, double z)
+{
+}
+
+FallingBlock::FallingBlock(double x, double y, double z, double vx, double vy, double vz)
+{
+}
+
+FallingBlock::FallingBlock(std::string inputString)
+{
+}
+
+FallingBlock::FallingBlock(const Entity& other)
+{
+}
+
+FallingBlock::FallingBlock(const FallingBlock& other)
+{
+}
+
+void FallingBlock::checkCollision(const std::vector<Block>& blocksInWorld)
+{
+}
+
+void FallingBlock::explosionFrom(const Entity& booster, double exposureFraction, const std::vector<Block>& blocksInWorld)
+{
+}
+
+void FallingBlock::explosion(const Entity& booster, double exposureFraction, const std::vector<Block>& blocksInWorld)
+{
+}
+
+void FallingBlock::swing(const Entity& booster, const std::vector<Block>& blocksInWorld)
+{
+}
+
+void FallingBlock::freefall(unsigned int ticks, const std::vector<Block>& blocksInWorld)
+{
+}
+
+void FallingBlock::print()
+{
+}
+
 /*
 *	This is where the World Class definitions start
 */
@@ -414,17 +466,28 @@ void World::addBlocks(const std::vector<Block> blocksToAdd) {
 }
 
 // Entities
-void World::addEntity(Entity* entity) {
+void World::addEntity(Entity* entity) { //FIXME
 	entitiesInWorld.push_back(entity);
 	std::sort(entitiesInWorld.begin(), entitiesInWorld.end(), compareEntities);
 }
 
+
 void World::addEntities(const std::vector<Entity*>& entitiesToAdd) {
 	for (Entity* entity : entitiesToAdd) {
-		entitiesInWorld.push_back(entity);
+		if (Tnt* addedEntity = dynamic_cast<Tnt*>(entity)) {
+			// If entity is of type Tnt, add it to tntsInWorld
+			Tnt* tntAdded = new Tnt(*addedEntity);
+			tntsInWorld.push_back(*tntAdded); // Dereference and add to tntsInWorld
+			entitiesInWorld.push_back(tntAdded); // Always add to entitiesInWorld
+		} // TODO: Add Subclasses
+		/*
+			Add new entity types here
+
+		*/
 	}
 	std::sort(entitiesInWorld.begin(), entitiesInWorld.end(), compareEntities);
 }
+
 
 void World::run(unsigned int ticks) {
 	if (ticks == 0) {
@@ -438,7 +501,7 @@ void World::run(unsigned int ticks) {
 			std::cout << "Tnt entity with fuse 0 found" << std::endl;
 			for (Entity* otherEntity : entitiesInWorld) {
 				if (otherEntity != tntEntity) {
-					// otherEntity->explosionFrom(*tntEntity, air); TODO: FIXME
+					otherEntity->explosionFrom(*tntEntity, air, blocksInWorld);
 				}
 			}
 			tntEntity->kill();
@@ -460,7 +523,7 @@ void World::run(unsigned int ticks) {
 				std::cout << "Tnt entity with fuse 0 found" << std::endl;
 				for (Entity* otherEntity : entitiesInWorld) {
 					if (otherEntity != tntEntity) {
-						// otherEntity->swingFrom(*tntEntity, blocksInWorld); TODO FIXME
+						otherEntity->explosionFrom(*tntEntity, air, blocksInWorld);
 					}
 				}
 				tntEntity->kill();
@@ -471,22 +534,68 @@ void World::run(unsigned int ticks) {
 
 // Save States
 void World::backup() {
-	for (const Block& block : blocksInWorld) {
-		backupBlocksInWorld.push_back(block);
+	// Clear current Backups
+	backupBlocksInWorld.clear();
+	for (Entity* backedEntity : backupEntitiesInWorld) {
+		delete backedEntity;
 	}
+	backupEntitiesInWorld.clear();
+
+	// Assign backups with active values
+	backupWorldTick = worldTick;
+	backupBlocksInWorld = blocksInWorld;
 	for (Entity* entity : entitiesInWorld) {
-		backupEntitiesInWorld.push_back(entity);
+		if (Tnt* tntEntity = dynamic_cast<Tnt*>(entity)) {
+			// If entity is of type Tnt, add it to tntsInWorld
+			Tnt* tntSpawned = new Tnt(*tntEntity);
+			backupEntitiesInWorld.push_back(tntSpawned); // Always add to entitiesInWorld
+		} /*
+			ADD other entities backups
+		  */
 	}
 	backupWorldTick = worldTick;
 }
 
 void World::clear() {
+
 	blocksInWorld.clear();
+	for (Entity* entity : entitiesInWorld) {
+		delete entity;
+	}
 	entitiesInWorld.clear();
+	tntsInWorld.clear();
+	// TODO: add subclasses
+
+	backupBlocksInWorld.clear();
+	for (Entity* backedEntity : backupEntitiesInWorld) {
+		delete backedEntity;
+	}
+	backupEntitiesInWorld.clear();
 }
 
 void World::reload() {
+	// 1. clear active vars
+	blocksInWorld.clear();
+	for (Entity* entity : entitiesInWorld) {
+		delete entity;
+	}
+	entitiesInWorld.clear();
+	tntsInWorld.clear();
+	// TODO: add subclasses
+
+	// 2. It should read from backups
+	worldTick = backupWorldTick;
 	blocksInWorld = backupBlocksInWorld;
+	for (Entity* backedEntity : backupEntitiesInWorld) {
+
+		if (Tnt* entityToBackup = dynamic_cast<Tnt*>(backedEntity)) {
+			Tnt* tntBacked = new Tnt(*entityToBackup);
+			entitiesInWorld.push_back(tntBacked);
+			tntsInWorld.push_back(*tntBacked);
+		} // TODO: add subclasses
+
+	}
+
 }
 
 // Print/Debug Functions
@@ -500,10 +609,22 @@ void World::printInformation() {
 	std::cout << "  Entity information: " << std::endl;
 	for (Entity* entity : entitiesInWorld) {
 		if (!entity->getName().empty()) {
-			std::cout << entity->getName();
+			std::cout << "\t" << entity->getName();
 		}
 		std::cout << "\tAlive?: " << entity->isAlive() << std::endl;
-		std::cout << "\t" << entity->getX() << ", " << entity->getY() << ", " << entity->getZ() << "\t"
-			<< entity->getU() << ", " << entity->getV() << ", " << entity->getW() << std::endl;
+		entity->printHistory();
+	}
+}
+
+void World::printBlocksInWorld()
+{
+	for (auto block : blocksInWorld) {
+		std::cout << block.z << ", " << block.y << std::endl;
+	}
+}
+
+World::~World() {
+	for (Entity* entity : entitiesInWorld) {
+		delete entity;
 	}
 }

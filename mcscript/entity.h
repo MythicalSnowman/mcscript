@@ -21,7 +21,7 @@
 #define one_twenty float(1.0 / 20.0)
 #define STANDARD_PRECISION 17 // 17 normal
 #define DISPLAY_LOC_DIGITS 17 // 17 normal
-#define DISPLAY_MOT_DIGITS 17
+#define DISPLAY_MOT_DIGITS 5 // 17 normal
 
 // Class that contains the current blocks in the world
 // We do this because we might want to create multiple worlds in multithreading applications
@@ -122,6 +122,29 @@ public:
     void freefall(unsigned int ticks, const std::vector<Block>& blocksInWorld) override;
     void print() override;
 };
+class FallingBlock : public Entity
+{
+public:
+    const double halfWidth = 0.98f / 2.0;
+    const double height = 0.98f;
+private:
+    const double drag = 0.98, gravity = -0.04;
+public:
+    FallingBlock();
+    FallingBlock(double x, double y, double z);
+    FallingBlock(double x, double y, double z, double vx, double vy, double vz);
+    FallingBlock(std::string inputString);
+    FallingBlock(const Entity& other);
+    FallingBlock(const FallingBlock& other);
+    FallingBlock& operator=(const FallingBlock& other);
+
+    void checkCollision(const std::vector<Block>& blocksInWorld);
+    void explosionFrom(const Entity& booster, double exposureFraction, const std::vector<Block>& blocksInWorld) override;
+    void explosion(const Entity& booster, double exposureFraction, const std::vector<Block>& blocksInWorld) override;
+    void swing(const Entity& booster, const std::vector<Block>& blocksInWorld) override;
+    void freefall(unsigned int ticks, const std::vector<Block>& blocksInWorld) override;
+    void print() override;
+};
 
 /*
 *   World class is meant to simulate the world with blocks and entities runnin at the same time
@@ -136,16 +159,17 @@ public:
 
     // Assignment operator
     World& operator=(const World& other);
-
 private:
+    // Active:
     unsigned int worldTick = 0;
     std::vector<Block> blocksInWorld;
-    std::vector<Block> backupBlocksInWorld;
+    std::vector<Entity*> entitiesInWorld; // is the adress of the
+    std::vector<Tnt> tntsInWorld; // is a copy to f with
 
+    // Backups:
     unsigned int backupWorldTick = 0;
-    std::vector<Entity*> entitiesInWorld;
+    std::vector<Block> backupBlocksInWorld; 
     std::vector<Entity*> backupEntitiesInWorld;
-
 public:
     // Blocks
     void addBlock(Block blockToAdd);
@@ -154,18 +178,31 @@ public:
     // Entities
     void addEntity(Entity* entity);
     void addEntities(const std::vector<Entity*>& entitiesToAdd);
+    /*
+    * They should only write to the actives (Tnts InWorld, entitiesInWorld) and create new instances
+    */
 
     void run(unsigned int ticks);
 
     // Save States
     void backup();
+    /* Backup should
+    * 1. clear the backups
+    * 2. read from the actives and store into backups
+    */
     void clear();
     void reload();
+    /*
+    * 1. clear the active ones
+    * 2. It should read from backups
+    * 3. It shoudl load into the actives
+    */
 
     // Print/Debug Functions
-    void printInformation();
+    void printInformation();  
+
+    // Prints out the current Blocks in the world
+    void printBlocksInWorld();
+    ~World();
 };
-
-
-
 #endif // ENTITY_H

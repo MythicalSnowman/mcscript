@@ -181,28 +181,37 @@ void runSimulaiton(int simulationId, std::vector<int> parameter, std::ofstream& 
 
 	std::cout << "created << " << simulationId << std::endl;
 
-	// setup of the test world
-	World world;
+	/*
+		Initialize the entities and blocks in the world:
+	*/
 	// create the blocks in the world
 	Block yBlock(3360, 2, -16086);
 	std::vector<Block> blocksInWorld = {yBlock};
 
 	// Initialize all Entities
 	Tnt slabbust("3360.4900000095367 1.0199999809265137 -16085.490000009537");
-	slabbust.setAmount(500);
-	slabbust.freefall(3, { yBlock });
-	slabbust.explosionFrom(slabbust, air, { yBlock });// swing w 1 tnt
-	slabbust.freefall(1, { yBlock });
-	slabbust.printHistory();
-
-
+	slabbust.setName("Slabbust");
+	slabbust.freefall(4, blocksInWorld); // simulate it shooting 2 gt before hammer;
+	Tnt hammer("3360.4900000095367 1.0199999809265137 -16085.490000009537");
+	hammer.setName("Hammer");
+	hammer.setAmount(500);
+	hammer.setFuse(3);
+	// set the Order of Spawn
+	hammer.setOrder(0);
+	slabbust.setOrder(1);
 
 	/*
-	world.run(6); // run the world for 20 ticks
-	{
-		std::lock_guard<std::mutex> lock(printMutex);
-		std::cout << "World Blocks of " << simulationId << std::endl;
-		world.printInformation();
-	}
+		Initialize the test world and input intital conditions
 	*/
+	World world; // Initializes world
+	world.addEntities({ &slabbust, &hammer }); // Inputs entity data
+	world.addBlocks(blocksInWorld); // Inputs block data
+	world.backup(); // creates backup of the initial conditions
+
+	int i = 4;
+	world.run(i);
+	world.printInformation();
+	world.printBlocksInWorld();
+	world.reload();
+
 };
